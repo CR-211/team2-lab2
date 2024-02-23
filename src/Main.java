@@ -86,7 +86,7 @@ class Magazin {
         notifyAll();
     }
 
-    public synchronized int consume(String nameThread) {
+    public synchronized void consume(String nameThread) {
         while (depozit.isEmpty()) {
             try {
                 Main.gui.displayText("Depozitul este gol.");
@@ -106,7 +106,6 @@ class Magazin {
 
         }
         notifyAll();
-        return item;
     }
 }
 
@@ -166,7 +165,7 @@ class Consumator extends Thread {
     @Override
     public void run() {
         while(obiecteConsumate < numarObiecte){
-            int item = magazin.consume(getName());
+            magazin.consume(getName());
             obiecteConsumate++;
 
             try {
