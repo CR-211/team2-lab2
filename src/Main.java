@@ -1,15 +1,16 @@
+import java.awt.*;
+import java.awt.event.*;
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.Random;
 import javax.swing.*;
-import java.awt.*;
 
-public class Main extends JFrame
-{
+public class Main extends JFrame {
     private JTextArea textArea;
+    public static JButton customButton = new JButton("Inchide"); // Butonul nou adăugat
+    public static int xC = 0;
 
-    public Main()
-    {
+
+    public Main() {
         setTitle("Text Scroll GUI");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1200, 1200);
@@ -18,7 +19,6 @@ public class Main extends JFrame
         textArea.setLineWrap(true);
         textArea.setWrapStyleWord(true);
 
-        // Setarea fontului cu o dimensiune mai mare
         Font font = new Font("Arial", Font.PLAIN, 30);
         textArea.setFont(font);
 
@@ -26,23 +26,32 @@ public class Main extends JFrame
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
         getContentPane().add(scrollPane, BorderLayout.CENTER);
+
+        // Adăugarea butoanelor în partea de jos a frame-ului
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(customButton); // Adăugarea butonului nou
+        getContentPane().add(buttonPanel, BorderLayout.SOUTH);
+
+        // Ascultător pentru butonul nou adăugat
+        customButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                // Acțiunile care trebuie întreprinse când este apăsat butonul custom
+                System.out.print("programul s-a terminat");
+                System.exit(0);
+            }
+        });
+        customButton.setVisible(false);
     }
 
     public void displayText(String text) {
         textArea.append("\n" + text);
     }
 
-
-
-
     public static Main gui = new Main();
 
-    public static void main(String[] args)
-    {
-        SwingUtilities.invokeLater(() ->
-        {
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
             gui.setVisible(true);
-            gui.displayText("Consumatori - Producatori");
         });
 
         Magazin magazin = new Magazin();
@@ -64,7 +73,7 @@ class Magazin {
     public Queue<Integer> depozit = new LinkedList<>();
 
     public synchronized void produce(int item1, int item2, String numeThread) {
-        while (depozit.size() >= 5) {
+        while (depozit.size() >= d) {
             try {
                 Main.gui.displayText("Depozitul este plin.");
                 wait();
@@ -72,44 +81,50 @@ class Magazin {
                 e.printStackTrace();
             }
         }
-        Main.gui.displayText(numeThread + " a produs: " + item1 +"," + item2);
-        if(depozit.size() == 4){
+        Main.gui.displayText(numeThread + " a produs: " + item1 + "," + item2);
+        if (depozit.size() == 4) {
             depozit.add(item1);
-            Main.gui.displayText(item1 + " s-a pus in depozit, " + item2 +"nu a incaput");
-        }
-        else if(depozit.size() <= 3){
+            Main.gui.displayText(item1 + " s-a pus in depozit, " + item2 + "nu a incaput");
+        } else if (depozit.size() <= 3) {
             depozit.add(item1);
             depozit.add(item2);
-            Main.gui.displayText(item1 + " si " + item2 +"s-au pus in depozit");
+            Main.gui.displayText(item1 + " si " + item2 + "s-au pus in depozit");
         }
 
         notifyAll();
     }
 
-    public synchronized void consume(String nameThread) {
-        while (depozit.isEmpty()) {
-            try {
+    public synchronized void consume(String nameThread)
+    {
+        while (depozit.isEmpty())
+        {
+            if(Main.xC == 3)
+            {
+                return;
+            }
+            try
+            {
                 Main.gui.displayText("Depozitul este gol.");
                 wait();
-            } catch (InterruptedException e) {
+            } catch (InterruptedException e)
+            {
                 e.printStackTrace();
             }
         }
         int item = depozit.poll();
         Main.gui.displayText(nameThread + " a consumat1: " + item);
 
-        if(!depozit.isEmpty())
-        {
+        if (!depozit.isEmpty()) {
             int item2 = depozit.poll();
             Main.gui.displayText(nameThread + " a consumat2: " + item2);
-
-
         }
         notifyAll();
+
     }
 }
 
-class Producator extends Thread {
+class Producator extends Thread
+{
     Magazin magazin;
     public int numarObiecte;
 
@@ -120,41 +135,44 @@ class Producator extends Thread {
     }
 
     @Override
-    public void run() {
-        Random rand = new Random();
-        for(int j = 0;j<1;j++)
+    public void run()
+    {
+        for (int i = 0; i < numarObiecte; i++)
         {
-            for (int i = 0; i < numarObiecte; i++)
-            {
-                int item1 = (int) (Math.random()*100+1);
-                int item2 = (int) (Math.random()*100+1);
+            int item1 = (int) (Math.random() * 100 + 1);
+            int item2 = (int) (Math.random() * 100 + 1);
 
-                while(item1 % 2 != 0)
-                {
-                    item1++;
-                }
-                while(item2 % 2 != 0)
-                {
-                    item2++;
-                }
-                magazin.produce(item1, item2, getName());
+            while (item1 % 2 != 0) {
+                item1++;
+            }
+            while (item2 % 2 != 0) {
+                item2++;
+            }
+            magazin.produce(item1, item2, getName());
 
-                try {
-                    sleep(300);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            try {
+                sleep(300);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
+        Main.gui.displayText(getName() + " S-a finalizat");
+        Main.xC++;
+        if(Main.xC >= 3)
+        {
+            Main.customButton.setVisible(true);
+        }
+        synchronized (magazin)
+        {
+            magazin.notifyAll();
+        }
     }
-
-
 }
 
-class Consumator extends Thread {
+class Consumator extends Thread
+{
     private Magazin magazin;
-    private int numarObiecte= 50;
-    public int obiecteConsumate = 0;
+
 
     Consumator(int id, Magazin magazin) {
         this.magazin = magazin;
@@ -164,9 +182,9 @@ class Consumator extends Thread {
 
     @Override
     public void run() {
-        while(obiecteConsumate < numarObiecte){
+        while (Main.xC < 3 || magazin.depozit.size() != 0)
+        {
             magazin.consume(getName());
-            obiecteConsumate++;
 
             try {
                 sleep(300);
@@ -174,7 +192,9 @@ class Consumator extends Thread {
                 e.printStackTrace();
             }
         }
-        Main.gui.displayText(getName()+ " S-a finalizat");
-
+        Main.gui.displayText(getName() + " S-a finalizat");
+        synchronized (magazin) {
+            magazin.notifyAll();
+        }
     }
 }
