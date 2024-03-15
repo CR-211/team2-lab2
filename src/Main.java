@@ -6,9 +6,8 @@ import javax.swing.*;
 
 public class Main extends JFrame {
     private JTextArea textArea;
-    public static JButton customButton = new JButton("Inchide"); // Butonul nou adăugat
+    public static JButton customButton = new JButton("Inchide");
     public static int xC = 0;
-
 
     public Main() {
         setTitle("Text Scroll GUI");
@@ -27,15 +26,12 @@ public class Main extends JFrame {
 
         getContentPane().add(scrollPane, BorderLayout.CENTER);
 
-        // Adăugarea butoanelor în partea de jos a frame-ului
         JPanel buttonPanel = new JPanel();
-        buttonPanel.add(customButton); // Adăugarea butonului nou
+        buttonPanel.add(customButton);
         getContentPane().add(buttonPanel, BorderLayout.SOUTH);
 
-        // Ascultător pentru butonul nou adăugat
         customButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                // Acțiunile care trebuie întreprinse când este apăsat butonul custom
                 System.out.print("programul s-a terminat");
                 System.exit(0);
             }
@@ -55,11 +51,11 @@ public class Main extends JFrame {
         });
 
         Magazin magazin = new Magazin();
-        int X = 3;
-        int Y = 4;
+        int X = 4;
+        int Y = 3;
 
         for (int i = 0; i < X; i++) {
-            new Producator(i, magazin, 19).start();
+            new Producator(i, magazin, 31).start();
         }
 
         for (int i = 0; i < Y; i++) {
@@ -69,10 +65,10 @@ public class Main extends JFrame {
 }
 
 class Magazin {
-    public int d = 5;
-    public Queue<Integer> depozit = new LinkedList<>();
+    public int d = 10;
+    public Queue<Character> depozit = new LinkedList<>();
 
-    public synchronized void produce(int item1, int item2, String numeThread) {
+    public synchronized void produce(char item1, char item2, String numeThread) {
         while (depozit.size() >= d) {
             try {
                 Main.gui.displayText("Depozitul este plin.");
@@ -82,40 +78,35 @@ class Magazin {
             }
         }
         Main.gui.displayText(numeThread + " a produs: " + item1 + "," + item2);
-        if (depozit.size() == 4) {
+        if (depozit.size() == 3) {
             depozit.add(item1);
-            Main.gui.displayText(item1 + " s-a pus in depozit, " + item2 + "nu a incaput");
-        } else if (depozit.size() <= 3) {
+            Main.gui.displayText(item1 + " s-a pus in depozit, " + item2 + " nu a incaput");
+        } else if (depozit.size() <= 4) {
             depozit.add(item1);
             depozit.add(item2);
-            Main.gui.displayText(item1 + " si " + item2 + "s-au pus in depozit");
+            Main.gui.displayText(item1 + " si " + item2 + " s-au pus in depozit");
         }
 
         notifyAll();
     }
 
-    public synchronized void consume(String nameThread)
-    {
-        while (depozit.isEmpty())
-        {
-            if(Main.xC == 3)
-            {
+    public synchronized void consume(String nameThread) {
+        while (depozit.isEmpty()) {
+            if (Main.xC == 3) {
                 return;
             }
-            try
-            {
+            try {
                 Main.gui.displayText("Depozitul este gol.");
                 wait();
-            } catch (InterruptedException e)
-            {
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-        int item = depozit.poll();
+        char item = depozit.poll();
         Main.gui.displayText(nameThread + " a consumat1: " + item);
 
         if (!depozit.isEmpty()) {
-            int item2 = depozit.poll();
+            char item2 = depozit.poll();
             Main.gui.displayText(nameThread + " a consumat2: " + item2);
         }
         notifyAll();
@@ -123,8 +114,7 @@ class Magazin {
     }
 }
 
-class Producator extends Thread
-{
+class Producator extends Thread {
     Magazin magazin;
     public int numarObiecte;
 
@@ -135,19 +125,11 @@ class Producator extends Thread
     }
 
     @Override
-    public void run()
-    {
-        for (int i = 0; i < numarObiecte; i++)
-        {
-            int item1 = (int) (Math.random() * 100 + 1);
-            int item2 = (int) (Math.random() * 100 + 1);
+    public void run() {
+        for (int i = 0; i < numarObiecte; i++) {
+            char item1 = generateRandomVowel();
+            char item2 = generateRandomVowel();
 
-            while (item1 % 2 != 0) {
-                item1++;
-            }
-            while (item2 % 2 != 0) {
-                item2++;
-            }
             magazin.produce(item1, item2, getName());
 
             try {
@@ -158,32 +140,31 @@ class Producator extends Thread
         }
         Main.gui.displayText(getName() + " S-a finalizat");
         Main.xC++;
-        if(Main.xC >= 3)
-        {
+        if (Main.xC >= 3) {
             Main.customButton.setVisible(true);
         }
-        synchronized (magazin)
-        {
+        synchronized (magazin) {
             magazin.notifyAll();
         }
     }
+
+    private char generateRandomVowel() {
+        char[] vowels = {'a', 'e', 'i', 'o', 'u'};
+        return vowels[(int) (Math.random() * vowels.length)];
+    }
 }
 
-class Consumator extends Thread
-{
+class Consumator extends Thread {
     private Magazin magazin;
-
 
     Consumator(int id, Magazin magazin) {
         this.magazin = magazin;
-
         setName("Consumator" + (id + 1));
     }
 
     @Override
     public void run() {
-        while (Main.xC < 3 || magazin.depozit.size() != 0)
-        {
+        while (Main.xC < 3 || magazin.depozit.size() != 0) {
             magazin.consume(getName());
 
             try {
